@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Doctor Dashboard</title>
+</head>
+
+<body>
+    <h1>Doctor Dashboard</h1>
+    <p id="who"></p>
+    <button id="logout">Logout</button>
+    <hr>
+    <h2>Your Appointments</h2>
+    <div id="appts"></div>
+    <script>
+        const token = localStorage.getItem('token'); const username = localStorage.getItem('username');
+        if (!token) { location.href = '/login.html'; }
+        document.getElementById('who').textContent = 'Logged in as ' + username;
+        document.getElementById('logout').onclick = async () => { await fetch('/api/auth/logout', { method: 'POST', headers: { 'X-Auth-Token': token } }); localStorage.clear(); location.href = '/login.html'; };
+
+        async function loadMy() { const r = await fetch('/api/appointments/my', { headers: { 'X-Auth-Token': token } }); const a = await r.json(); const c = document.getElementById('appts'); c.innerHTML = ''; a.forEach(x => { const d = document.createElement('div'); d.textContent = '#' + x.id + ' | ' + x.patientName + ' with ' + x.doctor.name + ' on ' + x.date + ' @ ' + x.slot; const b = document.createElement('button'); b.textContent = 'Cancel'; b.onclick = async () => { await fetch('/api/appointments/' + x.id, { method: 'DELETE', headers: { 'X-Auth-Token': token } }); loadMy(); }; d.appendChild(b); c.appendChild(d); }); }
+        loadMy();
+    </script>
+</body>
+
+</html>

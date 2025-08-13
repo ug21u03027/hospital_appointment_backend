@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>User Dashboard</title></head><body>
+<h1>User Dashboard</h1>
+<p id="who"></p>
+<button id="logout">Logout</button>
+<hr>
+<h2>Book Appointment</h2>
+<label>Doctor:</label><select id="doctor"></select><button id="refresh">Refresh</button><br>
+<label>Date:</label><input type="date" id="date"><br>
+<label>Slot:</label><select id="slot"></select><br>
+<label>Patient name:</label><input id="patient"><br>
+<button id="book">Book</button>
+<p id="msg"></p>
+<hr>
+<h2>Your Appointments</h2>
+<div id="appts"></div>
+<script>
+const token = localStorage.getItem('token'); const username = localStorage.getItem('username');
+if (!token) { location.href = '/login.html'; }
+document.getElementById('who').textContent = 'Logged in as ' + username;
+document.getElementById('logout').onclick = async () => { await fetch('/api/auth/logout', {method:'POST', headers:{'X-Auth-Token':token}}); localStorage.clear(); location.href='/login.html'; };
+
+async function loadDoctors(){ const r=await fetch('/api/doctors'); const ds=await r.json(); const sel=document.getElementById('doctor'); sel.innerHTML=''; ds.forEach(d=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.name+' ('+d.specialty+')'; sel.appendChild(o); }); }
+document.getElementById('refresh').onclick=loadDoctors;
+document.getElementById('date').onchange = async ()=>{
+  const docId = document.getElementById('doctor').value; const date = document.getElementById('date').value;
+  if (!docId || !date) return;
+  console.log(docId+" "+date);
+  const r = await fetch('/api/appointments/slots/'+docId+'/'+date);
+  const slots = await r.json();
+  console.log(slots);
+  const sel = document.getElementById('slot'); sel.innerHTML=''; slots.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+};
+document.getElementById('book').onclick = async ()=>{
+  const body={ patientName: document.getElementById('patient').value || username, doctorId: Number(document.getElementById('doctor').value), date: document.getElementById('date').value, slot: document.getElementById('slot').value };
+  const res = await fetch('/api/appointments', { method:'POST', headers:{'Content-Type':'application/json', 'X-Auth-Token': token}, body: JSON.stringify(body) });
+  if (res.ok) { document.getElementById('msg').textContent='Booked!'; loadMy(); } else { const t=await res.text(); document.getElementById('msg').textContent='Failed: '+t; }
+};
+async function loadMy(){ const r = await fetch('/api/appointments/my', { headers:{'X-Auth-Token':token} }); const a = await r.json(); const c=document.getElementById('appts'); c.innerHTML=''; a.forEach(x=>{ const d=document.createElement('div'); d.textContent = '#'+x.id+' | '+x.patientName+' with '+x.doctor.name+' on '+x.date+' @ '+x.slot; const b=document.createElement('button'); b.textContent='Cancel'; b.onclick=async()=>{ await fetch('/api/appointments/'+x.id, { method:'DELETE', headers:{'X-Auth-Token':token} }); loadMy(); }; d.appendChild(b); c.appendChild(d); }); }
+loadDoctors(); loadMy();
+</script>
+</body></html>
