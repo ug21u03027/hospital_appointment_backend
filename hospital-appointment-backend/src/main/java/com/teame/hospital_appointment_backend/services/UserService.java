@@ -83,12 +83,7 @@ public class UserService {
         AccountStatus currentStatus = user.getStatus();
 
         switch (currentStatus) {
-            case DEACTIVATED -> {
-                // Only the same user can reactivate their own account
-                if (!authUser.getUser().getUserId().equals(userId)) {
-                    throw new UnauthorizedException("You can only reactivate your own account");
-                }
-            }
+
             case PENDING, BLOCKED -> {
                 // Only admins can activate pending/blocked accounts
                 if (authUser.getUser().getRole() != Role.ADMIN) {
@@ -109,26 +104,6 @@ public class UserService {
     }
 
 
-
-
-    public UserProfile deactivateUser(Long userId, CustomUserDetails authUser) {
-        User user = userDao.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // Only the same user can deactivate their own account
-        if (!authUser.getUser().getUserId().equals(userId)) {
-            throw new UnauthorizedException("You can only deactivate your own account");
-        }
-
-        if (user.getStatus().equals(AccountStatus.DEACTIVATED)) {
-            return convertToDto(user); // Already deactivated, no need to change
-        }
-
-        user.setStatus(AccountStatus.DEACTIVATED);
-        User deactivatedUser = userDao.save(user);
-
-        return convertToDto(deactivatedUser);
-    }
 
     public UserProfile blockUser(Long userId, CustomUserDetails authUser) {
         if (!authUser.getUser().getRole().equals(Role.ADMIN)) {

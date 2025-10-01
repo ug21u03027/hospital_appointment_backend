@@ -41,13 +41,6 @@ public class UserController {
         return ResponseEntity.ok(userProfile);
     }
 
-    @PutMapping("/{userId}/deactivate")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT')")
-    public ResponseEntity<UserProfile> deactivateUser(@PathVariable("userId") Long userId
-    , @AuthenticationPrincipal CustomUserDetails userDetails){
-        UserProfile userProfile=userService.deactivateUser(userId, userDetails);
-        return ResponseEntity.ok(userProfile);
-    }
 
     @PutMapping("/{userId}/block")
     @PreAuthorize("hasRole('ADMIN')")
